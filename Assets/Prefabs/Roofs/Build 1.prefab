@@ -739,8 +739,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71347698ab071794a875a11bb2f09d44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ColorObjects
-  SpriteObject: {fileID: 0}
-  currentColor: 0
+  SpriteObjectPirpl: {fileID: -4178046375966092550, guid: 46bd5b25555239147b7b036db33dac79, type: 3}
+  SpriteObjectBlue: {fileID: -4178046375966092550, guid: c40b20393ed1a4744b2382367eeb834d, type: 3}
+  SpriteObjectOrange: {fileID: -4178046375966092550, guid: 74b4c76fca2d7af4f83f72afcbb10863, type: 3}
+  SpriteObjectGreen: {fileID: -4178046375966092550, guid: 2b987379fd39ddf4690958edbc23d6a0, type: 3}
+  SpriteObjectRed: {fileID: -4178046375966092550, guid: a476f7ab538bf4947941565304e08601, type: 3}
+  SpriteObjectWhite: {fileID: -4178046375966092550, guid: 4c198585d3715a94aba8a0b8f677b898, type: 3}
+  section: 0
+  sectionColorSprite: 0
 --- !u!1 &6340712231652318418
 GameObject:
   m_ObjectHideFlags: 0

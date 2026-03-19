@@ -24,6 +24,12 @@ public class InstanceObjects : MonoBehaviour
 
     private void Awake() => Instance = this;
 
+    public GameObject House;
+    public GameObject Roof;
+    public GameObject Windows;
+    public GameObject Doors;
+    public GameObject Trees;
+
     public bool CanSpawn(SectionType section) => !spawnedFlags[(int)section];
 
     public void MarkSpawned(SectionType section, bool spawned)
@@ -36,11 +42,31 @@ public class InstanceObjects : MonoBehaviour
     public void RegisterSpawnedObject(SectionType section, GameObject obj)
     {
         spawnedObjects[(int)section] = obj;
-    }
+
+        switch (section)
+        {
+            case SectionType.House: House = obj; break;
+            case SectionType.Roof: Roof = obj; break;
+            case SectionType.Windows: Windows = obj;break;
+            case SectionType.Doors: Doors = obj; break;
+            case SectionType.Trees: Trees = obj; break;
+            default: break;
+        }
+     }
 
     public void UnregisterSpawnedObject(SectionType section)
     {
         spawnedObjects[(int)section] = null;
+
+        switch (section)
+        {
+            case SectionType.House: House = null; break;
+            case SectionType.Roof: Roof = null; break;
+            case SectionType.Windows: Windows = null; break;
+            case SectionType.Doors: Doors = null; break;
+            case SectionType.Trees: Trees = null; break;
+            default: break;
+        }
     }
 
     public GameObject GetSpawnedObject(SectionType section)

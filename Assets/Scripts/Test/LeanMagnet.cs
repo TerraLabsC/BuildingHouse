@@ -16,6 +16,8 @@ public class LeanMagnet : MonoBehaviour
     [SerializeField] private bool showAttachmentGizmo = true;
     [SerializeField] private Color attachmentGizmoColor = Color.blue;
 
+    [SerializeField] GameObject destroy;
+
     public enum AttachmentPointType
     {
         Custom,
@@ -68,6 +70,17 @@ public class LeanMagnet : MonoBehaviour
             roofsLayer = LayerMask.GetMask("Roofs");
     }
 
+    private void Start()
+    {
+        // Если у объекта есть тег
+        GameObject foundObject = GameObject.FindWithTag("DestroyObjects");
+
+        if (foundObject != null)
+        {
+            destroy = foundObject;
+        }
+    }
+
     private void LateUpdate()
     {
         // Проверяем, перетаскивается ли объект (по нажатой мыши)
@@ -95,6 +108,9 @@ public class LeanMagnet : MonoBehaviour
                 if (hit.collider != null && hit.collider.gameObject == gameObject)
                 {
                     isBeingDragged = true;
+
+                    destroy.GetComponent<DestroyObject>().Object = gameObject;
+
                     break;
                 }
             }
@@ -108,6 +124,8 @@ public class LeanMagnet : MonoBehaviour
             if (hit.collider != null && hit.collider.gameObject == gameObject)
             {
                 isBeingDragged = true;
+
+                destroy.GetComponent<DestroyObject>().Object = gameObject;
             }
         }
     }

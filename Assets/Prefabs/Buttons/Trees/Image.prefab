@@ -166,7 +166,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpawnObjects
   section: 4
-  prefabObject: {fileID: 5874908980452756294, guid: 13da5a829e368c841a2284ea4dfb6666, type: 3}
+  prefabObject: {fileID: 2612223131347001468, guid: b7f5cd3a3fd7a8e42ab3ad42cf79e75e, type: 3}
 --- !u!114 &8695602540932654070
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -26,4 +26,27 @@ public class ColorObjects : MonoBehaviour
 
     [SerializeField] private SectionType section;
     [SerializeField] private SectionTypeColor sectionColorSprite;
+
+    private SpriteRenderer spriteRenderer;
+
+    private void Awake()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    public void SetColor(SectionTypeColor color)
+    {
+        sectionColorSprite = color;
+        if (spriteRenderer == null) return;
+
+        switch (color)
+        {
+            case SectionTypeColor.Perpl: spriteRenderer.sprite = SpriteObjectPirpl; break;
+            case SectionTypeColor.Blue: spriteRenderer.sprite = SpriteObjectBlue; break;
+            case SectionTypeColor.Orange: spriteRenderer.sprite = SpriteObjectOrange; break;
+            case SectionTypeColor.Green: spriteRenderer.sprite = SpriteObjectGreen; break;
+            case SectionTypeColor.Red: spriteRenderer.sprite = SpriteObjectRed; break;
+            case SectionTypeColor.White: spriteRenderer.sprite = SpriteObjectWhite; break;
+        }
+    }
 }

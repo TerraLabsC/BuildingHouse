@@ -15,8 +15,17 @@ public class ButtonsActivateBuilder : MonoBehaviour
     [SerializeField] private List<GameObject> spawnerObjectsColorButtonsSix;
     [SerializeField] private GameObject contentColorButton;
 
+    [Header("÷вета дл€ п€ти кнопок")]
+    [SerializeField] private SectionTypeColor[] colorsFive;
+    [Header("÷вета дл€ шести кнопок")]
+    [SerializeField] private SectionTypeColor[] colorsSix;
+
+    public SectionType section;
+
     public void SpawnerButtons()
     {
+        SelectionManager.Instance.SelectSection(section);
+
         DestroyChild();
 
         foreach (GameObject obj in spawnerObjects)
@@ -29,35 +38,35 @@ public class ButtonsActivateBuilder : MonoBehaviour
 
     private void ForceUpdateCanvas()
     {
-        LayoutRebuilder.ForceRebuildLayoutImmediate(filterContent.GetComponent<RectTransform>());
-    }
-
-    public void DestroyChild()
-    {
-        for (int i = content.transform.childCount - 1; i >= 0; i--)
-        {
-            Destroy(content.transform.GetChild(i).gameObject);
-        }
-
-        for (int i = contentColorButton.transform.childCount - 1; i >= 0; i--)
-        {
-            Destroy(contentColorButton.transform.GetChild(i).gameObject);
-        }
+        //LayoutRebuilder.ForceRebuildLayoutImmediate(filterContent.GetComponent<RectTransform>());
     }
 
     public void ColorButtonFive()
     {
-        foreach (GameObject obj in spawnerObjectsColorButtonsFive)
+        for (int i = 0; i < spawnerObjectsColorButtonsFive.Count && i < colorsFive.Length; i++)
         {
-            Instantiate(obj, transform.position, Quaternion.identity, contentColorButton.transform);
+            GameObject newBtn = Instantiate(spawnerObjectsColorButtonsFive[i], contentColorButton.transform);
+            ColorButton cb = newBtn.GetComponent<ColorButton>();
+            if (cb != null) cb.color = colorsFive[i];
         }
     }
 
     public void ColorButtonSix()
     {
-        foreach (GameObject obj in spawnerObjectsColorButtonsSix)
+        for (int i = 0; i < spawnerObjectsColorButtonsSix.Count && i < colorsSix.Length; i++)
         {
-            Instantiate(obj, transform.position, Quaternion.identity, contentColorButton.transform);
+            GameObject newBtn = Instantiate(spawnerObjectsColorButtonsSix[i], contentColorButton.transform);
+            ColorButton cb = newBtn.GetComponent<ColorButton>();
+            if (cb != null) cb.color = colorsSix[i];
         }
+    }
+
+    public void DestroyChild()
+    {
+        for (int i = content.transform.childCount - 1; i >= 0; i--)
+            Destroy(content.transform.GetChild(i).gameObject);
+
+        for (int i = contentColorButton.transform.childCount - 1; i >= 0; i--)
+            Destroy(contentColorButton.transform.GetChild(i).gameObject);
     }
 }

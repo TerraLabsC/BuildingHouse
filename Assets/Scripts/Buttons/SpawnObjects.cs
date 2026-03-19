@@ -10,15 +10,9 @@ public class SpawnObjects : MonoBehaviour
     private GameObject spawnedInstance;
     private Button button;
 
-    private void Awake()
-    {
-        button = GetComponent<Button>();
-    }
+    private void Awake() => button = GetComponent<Button>();
 
-    private void Start()
-    {
-        spawnTransform = InstanceObjects.Instance.TransformObject;
-    }
+    private void Start() => spawnTransform = InstanceObjects.Instance.TransformObject;
 
     private void OnEnable()
     {
@@ -59,8 +53,15 @@ public class SpawnObjects : MonoBehaviour
 
     public void SpawnerObject()
     {
-        if (!InstanceObjects.Instance.CanSpawn(section)) return;
+        // Всегда выбираем текущий раздел
+        if (SelectionManager.Instance != null)
+            SelectionManager.Instance.SelectSection(section);
 
+        // Если объект уже существует — ничего не делаем, просто вышли
+        if (!InstanceObjects.Instance.CanSpawn(section))
+            return;
+
+        // Спавним новый объект
         spawnedInstance = Instantiate(prefabObject, spawnTransform.position, spawnTransform.rotation);
         spawnedInstance.transform.parent = spawnTransform;
 
