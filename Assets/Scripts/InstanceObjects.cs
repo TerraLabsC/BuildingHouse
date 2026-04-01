@@ -2,28 +2,27 @@ using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public enum SectionType
-{
-    House,
-    Roof,
-    Windows,
-    Doors,
-    Trees
-}
-
 public class InstanceObjects : MonoBehaviour
 {
     public static InstanceObjects Instance;
 
-    private bool[] spawnedFlags = new bool[5];
-    private GameObject[] spawnedObjects = new GameObject[5];
+    private bool[] spawnedFlags = new bool[5];          // флаги: заспавнен ли объект
+    private GameObject[] spawnedObjects = new GameObject[5]; // ссылки на объекты
+    private int[] spawnedButtonIds = new int[5];        // id кнопок, создавших объекты
 
     public Transform TransformObject;
 
     public event Action<SectionType, bool> OnSpawnStateChanged;
 
-    private void Awake() => Instance = this;
+    private void Awake()
+    {
+        Instance = this;
+        // Инициализируем id как -1 (означает отсутствие)
+        for (int i = 0; i < spawnedButtonIds.Length; i++)
+            spawnedButtonIds[i] = -1;
+    }
 
+    // Публичные ссылки на объекты (можно оставить для удобства)
     public GameObject House;
     public GameObject Roof;
     public GameObject Windows;
@@ -39,24 +38,25 @@ public class InstanceObjects : MonoBehaviour
         OnSpawnStateChanged?.Invoke(section, spawned);
     }
 
-    public void RegisterSpawnedObject(SectionType section, GameObject obj)
+    public void RegisterSpawnedObject(SectionType section, GameObject obj, int buttonId)
     {
         spawnedObjects[(int)section] = obj;
+        spawnedButtonIds[(int)section] = buttonId;
 
         switch (section)
         {
             case SectionType.House: House = obj; break;
             case SectionType.Roof: Roof = obj; break;
-            case SectionType.Windows: Windows = obj;break;
+            case SectionType.Windows: Windows = obj; break;
             case SectionType.Doors: Doors = obj; break;
             case SectionType.Trees: Trees = obj; break;
-            default: break;
         }
-     }
+    }
 
     public void UnregisterSpawnedObject(SectionType section)
     {
         spawnedObjects[(int)section] = null;
+        spawnedButtonIds[(int)section] = -1;
 
         switch (section)
         {
@@ -65,12 +65,16 @@ public class InstanceObjects : MonoBehaviour
             case SectionType.Windows: Windows = null; break;
             case SectionType.Doors: Doors = null; break;
             case SectionType.Trees: Trees = null; break;
-            default: break;
         }
     }
 
-    public GameObject GetSpawnedObject(SectionType section)
+    public GameObject GetSpawnedObject(SectionType section) => spawnedObjects[(int)section];
+    public int GetButtonId(SectionType section) => spawnedButtonIds[(int)section];
+
+    public event Action<SectionType, SectionTypeColor> OnObjectColorChanged;
+
+    public void NotifyColorChanged(SectionType section, SectionTypeColor color)
     {
-        return spawnedObjects[(int)section];
+        OnObjectColorChanged?.Invoke(section, color);
     }
 }

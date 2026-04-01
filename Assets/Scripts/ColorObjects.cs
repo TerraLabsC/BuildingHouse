@@ -14,7 +14,6 @@ public enum SectionTypeColor
     White
 }
 
-
 public class ColorObjects : MonoBehaviour
 {
     public Sprite SpriteObjectPirpl;
@@ -25,9 +24,12 @@ public class ColorObjects : MonoBehaviour
     public Sprite SpriteObjectWhite;
 
     [SerializeField] private SectionType section;
-    [SerializeField] private SectionTypeColor sectionColorSprite;
+    public SectionTypeColor sectionColorSprite;
+    public SectionType sectionType; // добавлено: тип секции, к которой принадлежит объект
 
     private SpriteRenderer spriteRenderer;
+
+    public event Action<SectionType, SectionTypeColor> OnColorChanged;
 
     private void Awake()
     {
@@ -48,5 +50,10 @@ public class ColorObjects : MonoBehaviour
             case SectionTypeColor.Red: spriteRenderer.sprite = SpriteObjectRed; break;
             case SectionTypeColor.White: spriteRenderer.sprite = SpriteObjectWhite; break;
         }
+
+        // Уведомляем об изменении цвета
+        OnColorChanged?.Invoke(sectionType, color);
+        if (InstanceObjects.Instance != null)
+            InstanceObjects.Instance.NotifyColorChanged(sectionType, color);
     }
 }

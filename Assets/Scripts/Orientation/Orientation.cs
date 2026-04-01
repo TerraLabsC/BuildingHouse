@@ -33,14 +33,10 @@ public class Orientation : MonoBehaviour
 
         if (isHorizontal)
         {
-            Debug.Log("Переключение на горизонтальный режим");
-
             gameObject.transform.position = PositionCameraHorizontal.transform.position;
         }
         else
         {
-            Debug.Log("Переключение на вертикальный режим");
-
             gameObject.transform.position = PositionCameraVertical.transform.position;
         }
     }

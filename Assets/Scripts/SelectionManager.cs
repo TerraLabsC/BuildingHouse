@@ -1,5 +1,16 @@
+// SectionType.cs
 using System;
 using UnityEngine;
+
+public enum SectionType
+{
+    House,
+    Roof,
+    Windows,
+    Doors,
+    Trees
+}
+
 
 public class SelectionManager : MonoBehaviour
 {

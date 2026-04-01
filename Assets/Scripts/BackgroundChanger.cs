@@ -7,26 +7,39 @@ public class BackgroundChanger : MonoBehaviour
 {
     [Header("Компоненты")]
     [SerializeField] private Image backgroundImage;
-    [SerializeField] private CanvasGroup canvasGroup; // Только для фона
+    [SerializeField] private CanvasGroup canvasGroup;
 
     [Header("Список фонов")]
     [SerializeField] private List<Sprite> backgrounds = new List<Sprite>();
 
     [Header("Список граунда")]
-    [SerializeField] private List<GameObject> grounds; // Теперь это GameObject, а не Sprite
+    [SerializeField] private List<GameObject> grounds;
 
     [Header("Настройки анимации")]
-    [SerializeField] private float fadeDuration = 0.5f; // Длительность затухания только для фона
+    [SerializeField] private float fadeDuration = 0.5f;
+
+    // Статическая переменная для хранения текущего индекса между сценами
+    private static int globalBackgroundIndex = 0;
 
     private int currentIndex = 0;
     private bool isTransitioning = false;
 
+    void Awake()
+    {
+        // Применяем сохраненный индекс при загрузке сцены
+        currentIndex = globalBackgroundIndex;
+    }
+
     void Start()
     {
-        // Инициализация фона
+        InitializeBackground();
+    }
+
+    private void InitializeBackground()
+    {
         if (backgrounds.Count > 0 && backgroundImage != null)
         {
-            backgroundImage.sprite = backgrounds[0];
+            backgroundImage.sprite = backgrounds[currentIndex];
 
             if (canvasGroup == null)
             {
@@ -39,10 +52,8 @@ public class BackgroundChanger : MonoBehaviour
             canvasGroup.alpha = 1f;
         }
 
-        // Инициализация граунда - включаем первый, остальные выключаем
-        ActivateGroundByIndex(0);
+        ActivateGroundByIndex(currentIndex);
 
-        // Проверка соответствия размеров списков
         if (backgrounds.Count != grounds.Count)
         {
             Debug.LogWarning($"Количество фонов ({backgrounds.Count}) и граундов ({grounds.Count}) не совпадает!");
@@ -75,7 +86,7 @@ public class BackgroundChanger : MonoBehaviour
     {
         isTransitioning = true;
 
-        // Затухание только фона
+        // Затемнение
         float elapsedTime = 0f;
         while (elapsedTime < fadeDuration)
         {
@@ -85,13 +96,14 @@ public class BackgroundChanger : MonoBehaviour
         }
         canvasGroup.alpha = 0f;
 
-        // Смена фона
+        // Смена фона и граунда
         backgroundImage.sprite = backgrounds[currentIndex];
-
-        // МГНОВЕННАЯ СМЕНА ГРАУНДА - включаем нужный, выключаем все остальные
         ActivateGroundByIndex(currentIndex);
 
-        // Появление фона
+        // Сохраняем глобальный индекс
+        globalBackgroundIndex = currentIndex;
+
+        // Появление
         elapsedTime = 0f;
         while (elapsedTime < fadeDuration)
         {
@@ -104,12 +116,10 @@ public class BackgroundChanger : MonoBehaviour
         isTransitioning = false;
     }
 
-    // Метод для включения конкретного граунда и выключения всех остальных
     private void ActivateGroundByIndex(int index)
     {
         if (grounds.Count == 0) return;
 
-        // Сначала выключаем все граунды
         foreach (GameObject ground in grounds)
         {
             if (ground != null)
@@ -118,7 +128,6 @@ public class BackgroundChanger : MonoBehaviour
             }
         }
 
-        // Включаем нужный граунд, если индекс существует
         if (index >= 0 && index < grounds.Count && grounds[index] != null)
         {
             grounds[index].SetActive(true);
@@ -127,7 +136,6 @@ public class BackgroundChanger : MonoBehaviour
         {
             Debug.LogWarning($"Граунд с индексом {index} не существует или равен null");
 
-            // Если индекс не подходит, включаем первый или последний
             if (grounds.Count > 0 && grounds[0] != null)
             {
                 grounds[0].SetActive(true);
@@ -144,15 +152,46 @@ public class BackgroundChanger : MonoBehaviour
         }
     }
 
-    // Метод для ручного включения конкретного граунда
+    public void SetBackgroundWithoutTransition(int index)
+    {
+        if (index >= 0 && index < backgrounds.Count)
+        {
+            currentIndex = index;
+            globalBackgroundIndex = currentIndex;
+
+            if (backgroundImage != null)
+            {
+                backgroundImage.sprite = backgrounds[currentIndex];
+            }
+
+            ActivateGroundByIndex(currentIndex);
+        }
+    }
+
     public void ActivateGround(int index)
     {
         ActivateGroundByIndex(index);
     }
 
-    // Метод для получения текущего индекса
     public int GetCurrentIndex()
     {
         return currentIndex;
+    }
+
+    // Статический метод для установки фона из любого скрипта
+    public static void SetGlobalBackground(int index)
+    {
+        globalBackgroundIndex = index;
+    }
+
+    // Метод для принудительного обновления фона (вызвать после загрузки сцены)
+    public void RefreshBackground()
+    {
+        if (backgrounds.Count > 0 && backgroundImage != null)
+        {
+            currentIndex = globalBackgroundIndex;
+            backgroundImage.sprite = backgrounds[currentIndex];
+            ActivateGroundByIndex(currentIndex);
+        }
     }
 }
