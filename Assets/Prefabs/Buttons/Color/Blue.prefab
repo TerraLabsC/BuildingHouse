@@ -102,7 +102,7 @@ RectTransform:
   m_GameObject: {fileID: 5860788147332714958}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.274, y: 1.274, z: 1.274}
+  m_LocalScale: {x: 1.994702, y: 1.994702, z: 1.994702}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2002821191874542330}
@@ -299,7 +299,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColorButton
   color: 1
   BackGroundImage: {fileID: 2169245072492487493}
+  RedLine: {fileID: 0}
   backGroundColor: {r: 0, g: 0.1792453, b: 0.17573069, a: 1}
   _color: {r: 0, g: 1, b: 0.98039216, a: 1}
-  backGroundColorText: {r: 0.6, g: 0.6, b: 0.6, a: 1}
-  _colorText: {r: 1, g: 1, b: 1, a: 1}

@@ -16,7 +16,6 @@ GameObject:
   - component: {fileID: 7383833690147334609}
   - component: {fileID: 909271956629154135}
   - component: {fileID: 5219098019362031746}
-  - component: {fileID: 4646827712537577850}
   - component: {fileID: 3583201515178664504}
   - component: {fileID: 1602936139268648837}
   - component: {fileID: -502016358853825118}
@@ -276,19 +275,6 @@ MonoBehaviour:
   damping: -1
   inertia: 0
   remainingTranslation: {x: 0, y: 0, z: 0}
---- !u!114 &4646827712537577850
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 323963843686321681}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 763527ccbccad5341b605e31d4282eff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpawnedObjectNotifier
-  section: 4
 --- !u!114 &3583201515178664504
 MonoBehaviour:
   m_ObjectHideFlags: 0
