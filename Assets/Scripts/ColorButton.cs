@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class ColorButton : MonoBehaviour
 {
@@ -11,7 +10,7 @@ public class ColorButton : MonoBehaviour
     public Image RedLine;
 
     public Color backGroundColor;
-    public Color _color;
+    public Color _color; // цвет кнопки при активном выделении
 
     private void Awake() => button = GetComponent<Button>();
 
@@ -19,11 +18,12 @@ public class ColorButton : MonoBehaviour
     {
         if (InstanceObjects.Instance != null)
         {
-            InstanceObjects.Instance.OnSpawnStateChanged += OnSpawnStateChanged;
             InstanceObjects.Instance.OnObjectColorChanged += OnObjectColorChanged;
+            InstanceObjects.Instance.OnSelectedObjectChanged += OnSelectedObjectChanged;
         }
         if (SelectionManager.Instance != null)
             SelectionManager.Instance.OnSectionChanged += OnSectionChanged;
+
         UpdateState();
     }
 
@@ -31,25 +31,20 @@ public class ColorButton : MonoBehaviour
     {
         if (InstanceObjects.Instance != null)
         {
-            InstanceObjects.Instance.OnSpawnStateChanged -= OnSpawnStateChanged;
             InstanceObjects.Instance.OnObjectColorChanged -= OnObjectColorChanged;
+            InstanceObjects.Instance.OnSelectedObjectChanged -= OnSelectedObjectChanged;
         }
         if (SelectionManager.Instance != null)
             SelectionManager.Instance.OnSectionChanged -= OnSectionChanged;
     }
 
-    private void OnSpawnStateChanged(SectionType changedSection, bool spawned) => UpdateState();
+    private void OnObjectColorChanged(SectionType changedSection, SectionTypeColor newColor) => UpdateState();
     private void OnSectionChanged(SectionType newSection) => UpdateState();
-
-    private void OnObjectColorChanged(SectionType changedSection, SectionTypeColor newColor)
-    {
-        if (changedSection == SelectionManager.Instance?.CurrentSection)
-            UpdateState();
-    }
+    private void OnSelectedObjectChanged(GameObject newSelected) => UpdateState();
 
     private void Update()
     {
-        UpdateState();
+        UpdateState(); // для гарантии синхронизации в каждом кадре (можно убрать, если события покрывают)
     }
 
     private void UpdateState()
@@ -59,63 +54,64 @@ public class ColorButton : MonoBehaviour
             if (button != null) button.interactable = false;
             if (BackGroundImage != null) BackGroundImage.enabled = false;
             GetComponent<Image>().color = backGroundColor;
-
-            if (RedLine != null)
-            {
-                RedLine.color = Color.darkRed;
-            }
-
+            if (RedLine != null) RedLine.color = Color.darkRed;
             return;
         }
 
-        SectionType current = SelectionManager.Instance.CurrentSection;
-        GameObject obj = InstanceObjects.Instance.GetSpawnedObject(current);
-        bool objExists = obj != null;
+        // Целевой объект — выделенный объект (только если его секция совпадает с текущей секцией UI)
+        GameObject targetObject = GetTargetObject();
+        bool objExists = targetObject != null;
 
-        // Интерактивность кнопки: только если объект существует
         button.interactable = objExists;
 
-        // Фон: включается, если объект существует и его цвет совпадает с цветом кнопки
         if (BackGroundImage != null)
         {
             if (objExists)
             {
-                var colorObj = obj.GetComponent<ColorObjects>();
-                if (colorObj != null && colorObj.sectionColorSprite == color)
-                {
-                    BackGroundImage.enabled = true;
-                    GetComponent<Image>().color = _color;
+                var colorObj = targetObject.GetComponent<ColorObjects>();
+                bool isCurrentColor = (colorObj != null && colorObj.sectionColorSprite == color);
 
-                    if (RedLine != null)
-                    {
-                        RedLine.color = Color.red;
-                    }
-                }
-                else
-                {
-                    BackGroundImage.enabled = false;
-                    GetComponent<Image>().color = backGroundColor;
-                }
-                   
+                BackGroundImage.enabled = isCurrentColor;
+                GetComponent<Image>().color = isCurrentColor ? _color : backGroundColor;
+                if (RedLine != null)
+                    RedLine.color = isCurrentColor ? Color.red : Color.darkRed;
             }
             else
             {
                 BackGroundImage.enabled = false;
                 GetComponent<Image>().color = backGroundColor;
+                if (RedLine != null) RedLine.color = Color.darkRed;
             }
         }
     }
 
+    /// <summary>Возвращает объект, к которому будет применён цвет</summary>
+    private GameObject GetTargetObject()
+    {
+        var selected = InstanceObjects.Instance.SelectedObject;
+        if (selected == null) return null;
+
+        // Проверяем, что выделенный объект принадлежит текущей секции
+        var notifier = selected.GetComponent<SpawnedObjectNotifier>();
+        if (notifier != null && notifier.section == SelectionManager.Instance.CurrentSection)
+            return selected;
+
+        return null;
+    }
+
     public void ApplyColor()
     {
-        if (SelectionManager.Instance == null || InstanceObjects.Instance == null) return;
-
-        SectionType current = SelectionManager.Instance.CurrentSection;
-        GameObject obj = InstanceObjects.Instance.GetSpawnedObject(current);
-
-        if (obj == null) return;
+        GameObject obj = GetTargetObject();
+        if (obj == null)
+        {
+            Debug.LogWarning("[ColorButton] Нет подходящего выделенного объекта для смены цвета");
+            return;
+        }
 
         var colorObj = obj.GetComponent<ColorObjects>();
-        if (colorObj != null) colorObj.SetColor(color);
+        if (colorObj != null)
+            colorObj.SetColor(color);
+        else
+            Debug.LogWarning($"[ColorButton] На объекте {obj.name} нет компонента ColorObjects");
     }
 }

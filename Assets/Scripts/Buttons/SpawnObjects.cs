@@ -1,4 +1,5 @@
-using TMPro;
+п»їusing Lean.Common;
+using Lean.Touch;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,97 +7,154 @@ public class SpawnObjects : MonoBehaviour
 {
     [SerializeField] private SectionType section;
     [SerializeField] private GameObject prefabObject;
-    [SerializeField] private int buttonId;          // уникальный id кнопки (задаётся в инспекторе)
 
     private Transform spawnTransform;
-    private GameObject spawnedInstance;
     private Button button;
 
     public Image BackGroundImage;
-
     public float RandomMin = 0f;
+
+    public Button @event; // РєРЅРѕРїРєР°, С‡РµР№ onClick.Invoke() РІС‹Р·С‹РІР°РµС‚СЃСЏ РїСЂРё РІС‹РґРµР»РµРЅРёРё РѕР±СЉРµРєС‚Р°
+
+    public GameObject FingerLesson;
+    public GameObject FingerLessonObject;
 
     private void Awake() => button = GetComponent<Button>();
 
-    private void Start() => spawnTransform = InstanceObjects.Instance.TransformObject;
-
-    private void OnEnable()
+    private void Start()
     {
-        if (InstanceObjects.Instance != null)
-        {
-            InstanceObjects.Instance.OnSpawnStateChanged += OnSpawnStateChanged;
-            UpdateState(); // сразу обновляем состояние при включении
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (InstanceObjects.Instance != null)
-            InstanceObjects.Instance.OnSpawnStateChanged -= OnSpawnStateChanged;
-    }
-
-    private void OnSpawnStateChanged(SectionType changedSection, bool spawned)
-    {
-        if (changedSection == section)
-            UpdateState();
-    }
-
-    // Можно оставить Update для надёжности (если событие вдруг не сработает)
-    private void Update() => UpdateState();
-
-    private void UpdateState()
-    {
-        if (button == null || InstanceObjects.Instance == null) return;
-
-        // Активность кнопки (разрешён ли спавн)
-        button.enabled = InstanceObjects.Instance.CanSpawn(section);
-
-        // Управление фоном
-        if (BackGroundImage != null)
-        {
-            GameObject obj = InstanceObjects.Instance.GetSpawnedObject(section);
-            int spawnedButtonId = InstanceObjects.Instance.GetButtonId(section);
-            // Включаем фон только если объект существует и его id совпадает с id этой кнопки
-            BackGroundImage.enabled = (obj != null && spawnedButtonId == buttonId);
-        }
+        spawnTransform = InstanceObjects.Instance.TransformObject;
+        if (button != null) button.interactable = true;
     }
 
     public void SpawnerObject()
     {
-        SetAllChildImagesState();
-
-        // Выбираем текущий раздел
         if (SelectionManager.Instance != null)
             SelectionManager.Instance.SelectSection(section);
 
-        // Если объект уже существует – выходим
-        if (!InstanceObjects.Instance.CanSpawn(section))
-            return;
-
-        // Спавним объект
-        spawnedInstance = Instantiate(prefabObject, spawnTransform.position, spawnTransform.rotation);
-        spawnedInstance.transform.parent = spawnTransform;
-
-        Vector3 localPos = spawnedInstance.transform.localPosition;
-        localPos.z = Random.Range(RandomMin, RandomMin);
-        spawnedInstance.transform.localPosition = localPos;
-
-        // Регистрируем объект и передаём id кнопки
-        InstanceObjects.Instance.RegisterSpawnedObject(section, spawnedInstance, buttonId);
-        InstanceObjects.Instance.MarkSpawned(section, true);
-
-        // Добавляем уведомитель об удалении
-        var notifier = spawnedInstance.AddComponent<SpawnedObjectNotifier>();
-        notifier.Initialize(section);
+        SpawnNewObject(spawnTransform.position, spawnTransform.rotation, Vector3.one);
     }
 
-    public void SetAllChildImagesState()
+    public void FingerLessonObjectOff()
     {
-        DisableChildImages disableChildImages = GetComponentInParent<DisableChildImages>();
-        disableChildImages.DisableAllImages();
+        if (FingerLesson != null)
+        {
+            FingerLesson.SetActive(false);
+        }
+    }
 
-        GameObject parentObject = transform.parent.gameObject.transform.parent.gameObject;
-        Image parentImage = parentObject.GetComponent<Image>();
-        parentImage.enabled = true;
+    private void SpawnNewObject(Vector3 position, Quaternion rotation, Vector3 scale)
+    {
+        DeactivateAll();
+
+        FingerLessonObjectOff();
+
+        GameObject spawnedInstance = Instantiate(prefabObject, position, rotation);
+        spawnedInstance.transform.parent = InstanceObjects.Instance.TransformObject;
+        spawnedInstance.transform.localScale = scale;
+        SelectableObject(spawnedInstance);
+
+        var instanceObj = InstanceObjects.Instance;
+
+        // Р Р°СЃС‡С‘С‚ Z (РѕСЃС‚Р°РІР»РµРЅ Р±РµР· РёР·РјРµРЅРµРЅРёР№)
+        float zOffset = instanceObj.GetNextZOffset(section);
+        float baseZ = GetBaseZForSection(section);
+        float finalZ = baseZ - zOffset;
+
+        Vector3 localPos = spawnedInstance.transform.localPosition;
+        localPos.z = finalZ;
+        spawnedInstance.transform.localPosition = localPos;
+
+        if (FingerLessonObject != null && instanceObj.isActiveFinger)
+        {
+            GameObject finger = Instantiate(FingerLessonObject, position, FingerLessonObject.transform.rotation);
+            finger.transform.parent = spawnedInstance.transform;
+            instanceObj.isActiveFinger = false;
+            finger.transform.position = new Vector3(finger.transform.position.x + 2f, 0, spawnedInstance.transform.position.z - 0.01f);
+            spawnedInstance.GetComponent<DestroyObj>().FingerLesson = finger;
+        }
+
+        // РќР°Р·РЅР°С‡РµРЅРёРµ sorting order РїРѕ РґРёР°РїР°Р·РѕРЅР°Рј
+        var spriteRenderer = spawnedInstance.GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            int baseOrder = GetBaseSortingOrder(section);
+            int index = instanceObj.GetNextSortingIndex(section);
+            spriteRenderer.sortingOrder = baseOrder + index;
+        }
+
+        instanceObj.RegisterSpawnedObject(section, spawnedInstance);
+
+        var notifier = spawnedInstance.AddComponent<SpawnedObjectNotifier>();
+        notifier.Initialize(section, @event);
+
+        instanceObj.SelectedObject = spawnedInstance;
+    }
+
+    private float GetBaseZForSection(SectionType section)
+    {
+        switch (section)
+        {
+            case SectionType.House: return -6f;
+            case SectionType.Roof: return -7f;
+            case SectionType.Windows: return -8f;
+            case SectionType.Doors: return -9f;
+            case SectionType.Trees: return -10f;
+            default: return 0f;
+        }
+    }
+
+    private int GetBaseSortingOrder(SectionType section)
+    {
+        switch (section)
+        {
+            case SectionType.House: return 0;
+            case SectionType.Roof: return 101;
+            case SectionType.Windows: return 201;
+            case SectionType.Doors: return 301;
+            case SectionType.Trees: return 401;
+            default: return 0;
+        }
+    }
+
+    public void DeactivateAll()
+    {
+        DragObject3D[] allDragObjects = FindObjectsOfType<DragObject3D>();
+        foreach (DragObject3D dragObj in allDragObjects)
+        {
+            // РЎРЅР°С‡Р°Р»Р° СЃРЅРёРјР°РµРј РІС‹РґРµР»РµРЅРёРµ, РµСЃР»Рё РѕР±СЉРµРєС‚ РІС‹РґРµР»РµРЅ
+            var selectable = dragObj.GetComponent<LeanSelectableByFinger>();
+            if (selectable != null && selectable.IsSelected)
+            {
+                selectable.Deselect();
+            }
+
+            // Р—Р°С‚РµРј РѕС‚РєР»СЋС‡Р°РµРј DragObject3D
+            dragObj.IsActive = false;
+        }
+    }
+
+    public void SelectableObject(GameObject targetDragObject)
+    {
+        var selectable = targetDragObject.GetComponent<LeanSelectableByFinger>();
+        if (selectable == null)
+            return;
+
+        // РќР°С…РѕРґРёРј СЃРµР»РµРєС‚РѕСЂ (РѕРЅ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РЅР° РєР°РєРѕРј-С‚Рѕ РѕР±СЉРµРєС‚Рµ РІ СЃС†РµРЅРµ)
+        var selector = FindObjectOfType<LeanSelectByFinger>();
+        if (selector == null)
+        {
+            Debug.LogError("РќРµС‚ Р°РєС‚РёРІРЅРѕРіРѕ LeanSelectByFinger РІ СЃС†РµРЅРµ!");
+            return;
+        }
+
+        // РЎРѕР·РґР°С‘Рј С„РµР№РєРѕРІС‹Р№ РїР°Р»РµС†, РµСЃР»Рё РЅРµС‚ СЂРµР°Р»СЊРЅС‹С… РєР°СЃР°РЅРёР№
+        LeanFinger finger = LeanTouch.Fingers.Count > 0
+                            ? LeanTouch.Fingers[0]
+                            : new LeanFinger();
+
+        // Р’ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РІРµСЂСЃРёРё РјРµС‚РѕРґ РјРѕР¶РµС‚ РЅР°Р·С‹РІР°С‚СЊСЃСЏ РїРѕ-СЂР°Р·РЅРѕРјСѓ.
+        // РџСЂРѕР±СѓР№С‚Рµ СЌС‚РѕС‚ РІР°СЂРёР°РЅС‚ (РЅР°РёР±РѕР»РµРµ СЂР°СЃРїСЂРѕСЃС‚СЂР°РЅС‘РЅ):
+        selector.Select(selectable, finger);
     }
 }

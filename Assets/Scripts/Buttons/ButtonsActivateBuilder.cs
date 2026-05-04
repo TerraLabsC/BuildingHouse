@@ -22,6 +22,22 @@ public class ButtonsActivateBuilder : MonoBehaviour
 
     public SectionType section;
 
+    public bool isActive = false;
+
+    public GameObject FingerLessonMain;
+
+    public GameObject FingerLessonObjectMain;
+
+    private void Start()
+    {
+        if (isActive)
+        {
+            DestroyChild();
+            SpawnerButtons();
+            ColorButtonSix();
+        }
+    }
+
     public void SpawnerButtons()
     {
         SelectionManager.Instance.SelectSection(section);
@@ -30,7 +46,10 @@ public class ButtonsActivateBuilder : MonoBehaviour
 
         foreach (GameObject obj in spawnerObjects)
         {
-            Instantiate(obj, transform.position, Quaternion.identity, content.transform);
+           var buttons = Instantiate(obj, transform.position, Quaternion.identity, content.transform);
+           buttons.GetComponentInChildren<SpawnObjects>().@event = gameObject.GetComponent<Button>();
+           buttons.GetComponentInChildren<SpawnObjects>().FingerLesson = FingerLessonMain;
+           buttons.GetComponentInChildren<SpawnObjects>().FingerLessonObject = FingerLessonObjectMain;
         }
 
         ForceUpdateCanvas();

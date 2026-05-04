@@ -1,6 +1,4 @@
-using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -25,7 +23,7 @@ public class ColorObjects : MonoBehaviour
 
     [SerializeField] private SectionType section;
     public SectionTypeColor sectionColorSprite;
-    public SectionType sectionType; // добавлено: тип секции, к которой принадлежит объект
+    public SectionType sectionType; // тип секции, к которой принадлежит объект
 
     private SpriteRenderer spriteRenderer;
 
@@ -51,7 +49,6 @@ public class ColorObjects : MonoBehaviour
             case SectionTypeColor.White: spriteRenderer.sprite = SpriteObjectWhite; break;
         }
 
-        // Уведомляем об изменении цвета
         OnColorChanged?.Invoke(sectionType, color);
         if (InstanceObjects.Instance != null)
             InstanceObjects.Instance.NotifyColorChanged(sectionType, color);

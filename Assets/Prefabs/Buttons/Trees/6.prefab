@@ -37,7 +37,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -0.000026847, y: 0}
-  m_SizeDelta: {x: 567, y: 769}
+  m_SizeDelta: {x: 1024, y: 1024}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3379054121546107684
 CanvasRenderer:
@@ -94,6 +94,8 @@ MonoBehaviour:
   buttonId: 18
   BackGroundImage: {fileID: 7383500081603429624}
   RandomMin: 0.1
+  event: {fileID: 0}
+  layerCollider: 4
 --- !u!114 &190848145878817574
 MonoBehaviour:
   m_ObjectHideFlags: 0

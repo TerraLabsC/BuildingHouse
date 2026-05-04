@@ -165,7 +165,6 @@ GameObject:
   - component: {fileID: 2849693162048121965}
   - component: {fileID: 4859953147091422193}
   - component: {fileID: 1945878318496312972}
-  - component: {fileID: 943266563938621217}
   m_Layer: 5
   m_Name: Image
   m_TagString: Untagged
@@ -247,6 +246,8 @@ MonoBehaviour:
   buttonId: 6
   BackGroundImage: {fileID: 365475506488042305}
   RandomMin: 0.3
+  event: {fileID: 0}
+  layerCollider: 2
 --- !u!114 &1945878318496312972
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -303,20 +304,3 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &943266563938621217
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8260650332570516587}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0af37e3523026a4190c93304510b94e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpawnObjects
-  section: 2
-  prefabObject: {fileID: 8186792179931708706, guid: 1ca2f4022e770754aa5fb402d684d4b7, type: 3}
-  buttonId: 13
-  BackGroundImage: {fileID: 0}
-  RandomMin: 0.3

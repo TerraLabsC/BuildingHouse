@@ -246,6 +246,8 @@ MonoBehaviour:
   buttonId: 16
   BackGroundImage: {fileID: 1166407450473343212}
   RandomMin: 0.1
+  event: {fileID: 0}
+  layerCollider: 4
 --- !u!114 &6666073642655659483
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -113,7 +113,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -0.000026847, y: 0}
-  m_SizeDelta: {x: 581, y: 702}
+  m_SizeDelta: {x: 1024, y: 1024}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1145315515195898319
 CanvasRenderer:
@@ -168,8 +168,10 @@ MonoBehaviour:
   section: 4
   prefabObject: {fileID: 1122181125071372600, guid: 2964b946dec508543a0b6dc3ca2f2665, type: 3}
   buttonId: 13
-  BackGroundImage: {fileID: 0}
+  BackGroundImage: {fileID: 8141879851503809302}
   RandomMin: 0.1
+  event: {fileID: 0}
+  layerCollider: 4
 --- !u!114 &3526648923380325188
 MonoBehaviour:
   m_ObjectHideFlags: 0

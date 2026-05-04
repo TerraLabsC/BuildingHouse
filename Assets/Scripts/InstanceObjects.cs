@@ -1,80 +1,120 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class InstanceObjects : MonoBehaviour
 {
     public static InstanceObjects Instance;
 
-    private bool[] spawnedFlags = new bool[5];          // �����: ��������� �� ������
-    private GameObject[] spawnedObjects = new GameObject[5]; // ������ �� �������
-    private int[] spawnedButtonIds = new int[5];        // id ������, ��������� �������
+    private GameObject selectedObject;
+
+    public bool isActiveFinger = true;
+
+    public GameObject SelectedObject
+    {
+        get => selectedObject;
+        set
+        {
+            if (selectedObject == value) return;
+            selectedObject = value;
+            OnSelectedObjectChanged?.Invoke(selectedObject);
+        }
+    }
+
+    // Списки заспавненных объектов по секциям
+    private List<GameObject>[] spawnedObjectsLists = new List<GameObject>[5];
 
     public Transform TransformObject;
 
     public event Action<SectionType, bool> OnSpawnStateChanged;
+    public event Action<SectionType, SectionTypeColor> OnObjectColorChanged;
+    public event Action<GameObject> OnSelectedObjectChanged;
+
+    // Управление Z-слоями
+    private Dictionary<SectionType, float> sectionZOffsets = new Dictionary<SectionType, float>();
+    private int globalSortingOrder = 0;
+
+    // *** НОВОЕ: счётчики сортировки для каждой секции ***
+    private Dictionary<SectionType, int> sortingCounters = new Dictionary<SectionType, int>();
 
     private void Awake()
     {
         Instance = this;
-        // �������������� id ��� -1 (�������� ����������)
-        for (int i = 0; i < spawnedButtonIds.Length; i++)
-            spawnedButtonIds[i] = -1;
+        for (int i = 0; i < spawnedObjectsLists.Length; i++)
+            spawnedObjectsLists[i] = new List<GameObject>();
     }
 
-    // ��������� ������ �� ������� (����� �������� ��� ��������)
-    public GameObject House;
-    public GameObject Roof;
-    public GameObject Windows;
-    public GameObject Doors;
-    public GameObject Trees;
+    /// <summary>Текущее количество объектов в секции</summary>
+    public int GetCount(SectionType section) => spawnedObjectsLists[(int)section].Count;
 
-    public bool CanSpawn(SectionType section) => !spawnedFlags[(int)section];
-
-    public void MarkSpawned(SectionType section, bool spawned)
+    /// <summary>Регистрирует новый объект</summary>
+    public void RegisterSpawnedObject(SectionType section, GameObject obj)
     {
-        if (spawnedFlags[(int)section] == spawned) return;
-        spawnedFlags[(int)section] = spawned;
+        spawnedObjectsLists[(int)section].Add(obj);
+        MarkSpawned(section, true);
+    }
+
+    /// <summary>Удаляет объект из списков</summary>
+    public void UnregisterSpawnedObject(SectionType section, GameObject obj)
+    {
+        spawnedObjectsLists[(int)section].Remove(obj);
+        MarkSpawned(section, spawnedObjectsLists[(int)section].Count > 0);
+    }
+
+    /// <summary>Возвращает первый объект секции (для обратной совместимости)</summary>
+    public GameObject GetFirstObject(SectionType section)
+    {
+        var list = spawnedObjectsLists[(int)section];
+        return list.Count > 0 ? list[0] : null;
+    }
+
+    /// <summary>Возвращает список объектов секции (только для чтения)</summary>
+    public IReadOnlyList<GameObject> GetObjects(SectionType section) => spawnedObjectsLists[(int)section];
+
+    /// <summary>Уничтожает указанный объект и убирает из учёта</summary>
+    public void DestroyObject(GameObject obj, SectionType section)
+    {
+        if (obj == null) return;
+        UnregisterSpawnedObject(section, obj);
+        Destroy(obj);
+    }
+
+    public void MarkSpawned(SectionType section, bool spawned) =>
         OnSpawnStateChanged?.Invoke(section, spawned);
-    }
 
-    public void RegisterSpawnedObject(SectionType section, GameObject obj, int buttonId)
-    {
-        spawnedObjects[(int)section] = obj;
-        spawnedButtonIds[(int)section] = buttonId;
-
-        switch (section)
-        {
-            case SectionType.House: House = obj; break;
-            case SectionType.Roof: Roof = obj; break;
-            case SectionType.Windows: Windows = obj; break;
-            case SectionType.Doors: Doors = obj; break;
-            case SectionType.Trees: Trees = obj; break;
-        }
-    }
-
-    public void UnregisterSpawnedObject(SectionType section)
-    {
-        spawnedObjects[(int)section] = null;
-        spawnedButtonIds[(int)section] = -1;
-
-        switch (section)
-        {
-            case SectionType.House: House = null; break;
-            case SectionType.Roof: Roof = null; break;
-            case SectionType.Windows: Windows = null; break;
-            case SectionType.Doors: Doors = null; break;
-            case SectionType.Trees: Trees = null; break;
-        }
-    }
-
-    public GameObject GetSpawnedObject(SectionType section) => spawnedObjects[(int)section];
-    public int GetButtonId(SectionType section) => spawnedButtonIds[(int)section];
-
-    public event Action<SectionType, SectionTypeColor> OnObjectColorChanged;
-
-    public void NotifyColorChanged(SectionType section, SectionTypeColor color)
-    {
+    public void NotifyColorChanged(SectionType section, SectionTypeColor color) =>
         OnObjectColorChanged?.Invoke(section, color);
+
+    // ---------- Z-слои ----------
+    public float GetNextZOffset(SectionType section)
+    {
+        if (!sectionZOffsets.ContainsKey(section))
+            sectionZOffsets[section] = 0f;
+
+        float currentOffset = sectionZOffsets[section];
+        float nextOffset = currentOffset + 0.01f;
+        if (nextOffset >= 1.0f)
+            nextOffset = 0f;
+
+        sectionZOffsets[section] = nextOffset;
+        return currentOffset;
+    }
+
+    // ---------- Глобальный порядок сортировки (оставлен для обратной совместимости) ----------
+    public int GetNextSortingOrder() => globalSortingOrder++;
+
+    // *** НОВЫЙ МЕТОД: порядковый номер объекта внутри секции ***
+    public int GetNextSortingIndex(SectionType section)
+    {
+        if (!sortingCounters.ContainsKey(section))
+            sortingCounters[section] = 0;
+        return sortingCounters[section]++;
+    }
+
+    public void ResetAllOffsets()
+    {
+        sectionZOffsets.Clear();
+        globalSortingOrder = 0;
+        sortingCounters.Clear();   // сбрасываем и новый счётчик
     }
 }
