@@ -3,28 +3,37 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class DragObject3D : MonoBehaviour
 {
-    // Статическое событие: оповещает всех слушателей при изменении IsActive.
-    // Передаётся сам объект и новое значение активности.
     public static event System.Action<DragObject3D, bool> OnIsActiveChanged;
 
     private Camera mainCamera;
     private Vector3 offset;
     private Plane dragPlane;
+    private bool isDragging = false;
+    private int dragFingerId = -1;
 
     [SerializeField] private Color outlineColor = Color.white;
     private ColliderOutline outline;
 
     [SerializeField] private bool isActive = false;
 
+    // НОВОЕ: флаг, разрешающий перетаскивание (управляется из CornerDragHandler)
+    [HideInInspector] public bool allowDrag = true;
+
     public bool IsActive
     {
         get => isActive;
         set
         {
-            if (isActive == value) return;   // Не вызываем событие лишний раз
+            if (isActive == value) return;
             isActive = value;
             ApplyOutlineState();
             OnIsActiveChanged?.Invoke(this, isActive);
+
+            if (!isActive)
+            {
+                isDragging = false;
+                dragFingerId = -1;
+            }
         }
     }
 
@@ -39,8 +48,6 @@ public class DragObject3D : MonoBehaviour
     {
         mainCamera = Camera.main;
         ApplyOutlineState();
-
-        // Оповещаем о начальном состоянии, если кому-то нужно.
         OnIsActiveChanged?.Invoke(this, isActive);
     }
 
@@ -83,35 +90,6 @@ public class DragObject3D : MonoBehaviour
         ActiveCollidersHolder();
     }
 
-    private void SetOutlineAlpha(Color color)
-    {
-        if (outline == null) return;
-
-        LineRenderer[] lines = outline.Lines;
-        if (lines != null)
-        {
-            foreach (LineRenderer lr in lines)
-            {
-                if (lr != null && lr.material != null)
-                    lr.material.color = color;
-            }
-        }
-
-        Transform[] corners = outline.Corners;
-        if (corners != null)
-        {
-            foreach (Transform corner in corners)
-            {
-                if (corner == null) continue;
-                SpriteRenderer[] sprites = corner.GetComponentsInChildren<SpriteRenderer>();
-                foreach (SpriteRenderer sr in sprites)
-                {
-                    sr.color = color;
-                }
-            }
-        }
-    }
-
     public void SetActive(bool active)
     {
         IsActive = active;
@@ -119,7 +97,6 @@ public class DragObject3D : MonoBehaviour
 
     private void OnValidate()
     {
-        // Только для редактора – не вызываем событие во избежание ошибок.
         ApplyOutlineState();
     }
 
@@ -136,52 +113,141 @@ public class DragObject3D : MonoBehaviour
 
     private void Update()
     {
-        transform.GetChild(0).GetComponent<SpriteRenderer>().enabled = isActive;
+        Transform child0 = transform.GetChild(0);
+        if (child0 != null)
+        {
+            SpriteRenderer sr = child0.GetComponent<SpriteRenderer>();
+            if (sr != null)
+                sr.enabled = isActive;
+        }
 
         ApplyOutlineState();
 
         if (!isActive) return;
 
-        transform.GetChild(0).GetComponent<SpriteRenderer>().sortingOrder = GetComponent<SpriteRenderer>().sortingOrder;
-
-        dragPlane = new Plane(mainCamera.transform.forward, transform.position);
-
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        float distance;
-
-        if (dragPlane.Raycast(ray, out distance))
+        SpriteRenderer parentSr = GetComponent<SpriteRenderer>();
+        if (parentSr != null && child0 != null)
         {
-            Vector3 hitPoint = ray.GetPoint(distance);
-            offset = transform.position - hitPoint;
+            SpriteRenderer childSr = child0.GetComponent<SpriteRenderer>();
+            if (childSr != null)
+                childSr.sortingOrder = parentSr.sortingOrder - 1;
+        }
+
+        // НОВОЕ: не начинать драг, если запрещено (например, идёт скейлинг)
+        if (!isDragging)
+        {
+            if (allowDrag)
+                TryStartDrag();
+        }
+        else
+        {
+            TryUpdateDrag();
         }
     }
 
-    private void OnMouseDown()
+    private void TryStartDrag()
     {
-        if (!isActive) return;
+        Vector2 inputPos;
+        bool inputBegan = false;
 
-        dragPlane = new Plane(mainCamera.transform.forward, transform.position);
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        float distance;
-
-        if (dragPlane.Raycast(ray, out distance))
+        if (Input.touchCount > 0)
         {
-            Vector3 hitPoint = ray.GetPoint(distance);
-            offset = transform.position - hitPoint;
+            foreach (Touch touch in Input.touches)
+            {
+                if (touch.phase == TouchPhase.Began)
+                {
+                    inputPos = touch.position;
+                    inputBegan = true;
+                    Ray ray = mainCamera.ScreenPointToRay(inputPos);
+                    RaycastHit hit;
+                    if (Physics.Raycast(ray, out hit) && hit.collider.gameObject == gameObject)
+                    {
+                        dragFingerId = touch.fingerId;
+                        StartDrag(ray);
+                        return;
+                    }
+                }
+            }
+        }
+        else if (Input.GetMouseButtonDown(0))
+        {
+            inputPos = Input.mousePosition;
+            inputBegan = true;
+            Ray ray = mainCamera.ScreenPointToRay(inputPos);
+            RaycastHit hit;
+            if (Physics.Raycast(ray, out hit) && hit.collider.gameObject == gameObject)
+            {
+                dragFingerId = -1;
+                StartDrag(ray);
+            }
         }
     }
 
-    private void OnMouseDrag()
+    private void TryUpdateDrag()
     {
-        if (!isActive) return;
+        bool inputHeld = false;
+        Vector2 inputPos = Vector2.zero;
 
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        float distance;
-
-        if (dragPlane.Raycast(ray, out distance))
+        if (dragFingerId >= 0 && Input.touchCount > 0)
         {
-            Vector3 targetPosition = ray.GetPoint(distance) + offset;
-            transform.position = targetPosition;
+            foreach (Touch touch in Input.touches)
+            {
+                if (touch.fingerId == dragFingerId)
+                {
+                    if (touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary)
+                    {
+                        inputHeld = true;
+                        inputPos = touch.position;
+                    }
+                    else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+                    {
+                        isDragging = false;
+                        dragFingerId = -1;
+                        return;
+                    }
+                    break;
+                }
+            }
         }
+        else if (dragFingerId == -1 && Input.GetMouseButton(0))
+        {
+            inputHeld = true;
+            inputPos = Input.mousePosition;
+        }
+        else
+        {
+            isDragging = false;
+            dragFingerId = -1;
+            return;
+        }
+
+        if (inputHeld)
+        {
+            Ray ray = mainCamera.ScreenPointToRay(inputPos);
+            float distance;
+            if (dragPlane.Raycast(ray, out distance))
+            {
+                Vector3 targetPosition = ray.GetPoint(distance) + offset;
+                transform.position = targetPosition;
+            }
+        }
+    }
+
+    private void StartDrag(Ray initialRay)
+    {
+        dragPlane = new Plane(mainCamera.transform.forward, transform.position);
+
+        float distance;
+        if (dragPlane.Raycast(initialRay, out distance))
+        {
+            Vector3 hitPoint = initialRay.GetPoint(distance);
+            offset = transform.position - hitPoint;
+        }
+        else
+        {
+            offset = Vector3.zero;
+        }
+
+        isDragging = true;
     }
 }

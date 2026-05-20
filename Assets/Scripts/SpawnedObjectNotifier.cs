@@ -8,6 +8,9 @@ public class SpawnedObjectNotifier : MonoBehaviour
     private Button linkedButton;
     private LeanSelectableByFinger selectable;
 
+    // Префаб, из которого был создан этот объект
+    [HideInInspector] public GameObject sourcePrefab;
+
     private void Start()
     {
         selectable = GetComponent<LeanSelectableByFinger>();
@@ -21,12 +24,15 @@ public class SpawnedObjectNotifier : MonoBehaviour
         }
     }
 
-    public void Initialize(SectionType type, Button buttonRef)
+    /// <summary>
+    /// Инициализация с указанием префаба-источника.
+    /// </summary>
+    public void Initialize(SectionType type, Button buttonRef, GameObject prefab)
     {
         section = type;
         linkedButton = buttonRef;
+        sourcePrefab = prefab;
 
-        // Устанавливаем тип секции в ColorObjects
         var colorObj = GetComponent<ColorObjects>();
         if (colorObj != null)
             colorObj.sectionType = type;
@@ -34,15 +40,12 @@ public class SpawnedObjectNotifier : MonoBehaviour
 
     public void HandleTouch()
     {
-        // 1. Устанавливаем этот объект как выделенный
         if (InstanceObjects.Instance != null)
             InstanceObjects.Instance.SelectedObject = gameObject;
 
-        // 2. Переключаем текущую секцию в SelectionManager
         if (SelectionManager.Instance != null)
             SelectionManager.Instance.SelectSection(section);
 
-        // 3. Вызываем событие кнопки (например, для анимации UI)
         if (linkedButton != null)
             linkedButton.onClick.Invoke();
 
@@ -51,7 +54,12 @@ public class SpawnedObjectNotifier : MonoBehaviour
 
     private void OnDestroy()
     {
+        // Убираем из реестра InstanceObjects
         if (InstanceObjects.Instance != null)
             InstanceObjects.Instance.UnregisterSpawnedObject(section, gameObject);
+
+        // Убираем из трекера префабов
+        if (PrefabInstanceTracker.Instance != null && sourcePrefab != null)
+            PrefabInstanceTracker.Instance.Unregister(sourcePrefab);
     }
 }

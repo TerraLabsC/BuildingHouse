@@ -108,6 +108,10 @@ MonoBehaviour:
   cornerType: 0
   targetObject: {fileID: 0}
   cam: {fileID: 0}
+  cornerLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
+  isDragging: 0
 --- !u!58 &4197586617825998504
 CircleCollider2D:
   m_ObjectHideFlags: 0

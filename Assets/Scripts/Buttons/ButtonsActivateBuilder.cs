@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+п»їusing System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,14 +10,14 @@ public class ButtonsActivateBuilder : MonoBehaviour
 
     [SerializeField] private ContentSizeFitter filterContent;
 
-    [Header("Спавним кнопки цвета")]
+    [Header("РЎРїР°РІРЅРёРј РєРЅРѕРїРєРё С†РІРµС‚Р°")]
     [SerializeField] private List<GameObject> spawnerObjectsColorButtonsFive;
     [SerializeField] private List<GameObject> spawnerObjectsColorButtonsSix;
     [SerializeField] private GameObject contentColorButton;
 
-    [Header("Цвета для пяти кнопок")]
+    [Header("Р¦РІРµС‚Р° РґР»СЏ РїСЏС‚Рё РєРЅРѕРїРѕРє")]
     [SerializeField] private SectionTypeColor[] colorsFive;
-    [Header("Цвета для шести кнопок")]
+    [Header("Р¦РІРµС‚Р° РґР»СЏ С€РµСЃС‚Рё РєРЅРѕРїРѕРє")]
     [SerializeField] private SectionTypeColor[] colorsSix;
 
     public SectionType section;

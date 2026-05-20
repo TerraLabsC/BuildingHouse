@@ -8,11 +8,11 @@ public class SpawnObjects : MonoBehaviour
     [SerializeField] private SectionType section;
     [SerializeField] private GameObject prefabObject;
 
+    // Публичное свойство для доступа из SelectLightObject
+    public GameObject PrefabObject => prefabObject;
+
     private Transform spawnTransform;
     private Button button;
-
-    public Image BackGroundImage;
-    public float RandomMin = 0f;
 
     public Button @event; // кнопка, чей onClick.Invoke() вызывается при выделении объекта
 
@@ -46,7 +46,6 @@ public class SpawnObjects : MonoBehaviour
     private void SpawnNewObject(Vector3 position, Quaternion rotation, Vector3 scale)
     {
         DeactivateAll();
-
         FingerLessonObjectOff();
 
         GameObject spawnedInstance = Instantiate(prefabObject, position, rotation);
@@ -56,7 +55,7 @@ public class SpawnObjects : MonoBehaviour
 
         var instanceObj = InstanceObjects.Instance;
 
-        // Расчёт Z (оставлен без изменений)
+        // Расчёт Z
         float zOffset = instanceObj.GetNextZOffset(section);
         float baseZ = GetBaseZForSection(section);
         float finalZ = baseZ - zOffset;
@@ -74,7 +73,7 @@ public class SpawnObjects : MonoBehaviour
             spawnedInstance.GetComponent<DestroyObj>().FingerLesson = finger;
         }
 
-        // Назначение sorting order по диапазонам
+        // Назначение sorting order
         var spriteRenderer = spawnedInstance.GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
@@ -83,12 +82,18 @@ public class SpawnObjects : MonoBehaviour
             spriteRenderer.sortingOrder = baseOrder + index;
         }
 
+        // Регистрация в InstanceObjects
         instanceObj.RegisterSpawnedObject(section, spawnedInstance);
 
+        // Уведомитель о спавне / выделении (передаём префаб)
         var notifier = spawnedInstance.AddComponent<SpawnedObjectNotifier>();
-        notifier.Initialize(section, @event);
+        notifier.Initialize(section, @event, prefabObject);
 
         instanceObj.SelectedObject = spawnedInstance;
+
+        // *** Регистрируем экземпляр в трекере ***
+        if (PrefabInstanceTracker.Instance != null)
+            PrefabInstanceTracker.Instance.Register(prefabObject);
     }
 
     private float GetBaseZForSection(SectionType section)
@@ -122,14 +127,11 @@ public class SpawnObjects : MonoBehaviour
         DragObject3D[] allDragObjects = FindObjectsOfType<DragObject3D>();
         foreach (DragObject3D dragObj in allDragObjects)
         {
-            // Сначала снимаем выделение, если объект выделен
             var selectable = dragObj.GetComponent<LeanSelectableByFinger>();
             if (selectable != null && selectable.IsSelected)
             {
                 selectable.Deselect();
             }
-
-            // Затем отключаем DragObject3D
             dragObj.IsActive = false;
         }
     }
@@ -137,10 +139,8 @@ public class SpawnObjects : MonoBehaviour
     public void SelectableObject(GameObject targetDragObject)
     {
         var selectable = targetDragObject.GetComponent<LeanSelectableByFinger>();
-        if (selectable == null)
-            return;
+        if (selectable == null) return;
 
-        // Находим селектор (он должен быть на каком-то объекте в сцене)
         var selector = FindObjectOfType<LeanSelectByFinger>();
         if (selector == null)
         {
@@ -148,13 +148,10 @@ public class SpawnObjects : MonoBehaviour
             return;
         }
 
-        // Создаём фейковый палец, если нет реальных касаний
         LeanFinger finger = LeanTouch.Fingers.Count > 0
                             ? LeanTouch.Fingers[0]
                             : new LeanFinger();
 
-        // В зависимости от версии метод может называться по-разному.
-        // Пробуйте этот вариант (наиболее распространён):
         selector.Select(selectable, finger);
     }
 }
